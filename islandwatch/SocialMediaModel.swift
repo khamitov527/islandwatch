@@ -48,6 +48,7 @@ class SocialMediaTracker: ObservableObject {
     @Published var startTime: Date?
     @Published var elapsedTime: TimeInterval = 0
     @Published var platformUsageTimes: [SocialPlatform: TimeInterval] = [:]
+    @Published var lastRedirectError: String? = nil
     
     private var liveActivity: Activity<SocialMediaTimerAttributes>?
     private var timer: Timer?
@@ -76,9 +77,11 @@ class SocialMediaTracker: ObservableObject {
         // Start live activity
         startLiveActivity(for: platform)
         
-        // Open the app using URL scheme
-        if let url = platform.urlScheme, UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
+        // Open the app using URL scheme with error handling
+        openSocialApp(platform) { success in
+            if !success {
+                print("Failed to open \(platform.name) app. Make sure it's installed.")
+            }
         }
     }
     
@@ -115,19 +118,29 @@ class SocialMediaTracker: ObservableObject {
         // Update live activity
         updateLiveActivity()
         
-        // Open the app using URL scheme
-        if let url = platform.urlScheme, UIApplication.shared.canOpenURL(url) {
-            UIApplication.shared.open(url)
+        // Open the app using URL scheme with error handling
+        openSocialApp(platform) { success in
+            if !success {
+                print("Failed to resume \(platform.name) app. Make sure it's installed.")
+            }
         }
     }
     
     private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+        // Use a more frequent timer (10 updates per second) for smoother UI
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self = self, self.isRunning, let startTime = self.startTime else { return }
             let current = self.elapsedTime + Date().timeIntervalSince(startTime)
             
-            // Update live activity every second
-            self.updateLiveActivity(with: current)
+            // Update live activity less frequently (once per second) to reduce system load
+            if Int(current * 10) % 10 == 0 {
+                self.updateLiveActivity(with: current)
+            }
+        }
+        
+        // Make sure the timer continues to fire when scrolling
+        if let timer = timer {
+            RunLoop.current.add(timer, forMode: .common)
         }
     }
     
@@ -275,6 +288,44 @@ class SocialMediaTracker: ObservableObject {
             return String(format: "%d:%02d:%02d", hours, minutes, seconds)
         } else {
             return String(format: "%02d:%02d", minutes, seconds)
+        }
+    }
+    
+    private func openSocialApp(_ platform: SocialPlatform, completion: @escaping (Bool) -> Void) {
+        // Reset any previous error
+        lastRedirectError = nil
+        
+        guard let url = platform.urlScheme else {
+            lastRedirectError = "Invalid URL scheme for \(platform.name)"
+            completion(false)
+            return
+        }
+        
+        // Check if app is installed
+        if UIApplication.shared.canOpenURL(url) {
+            // Use newer API with completion handler for better reliability
+            UIApplication.shared.open(url, options: [:]) { success in
+                if !success {
+                    self.lastRedirectError = "Could not open \(platform.name). Please check if the app is installed."
+                }
+                completion(success)
+            }
+        } else {
+            // If app is not installed, try to open web version instead
+            let webURL: URL?
+            switch platform {
+            case .instagram: webURL = URL(string: "https://www.instagram.com")
+            case .twitter: webURL = URL(string: "https://x.com")
+            case .youtube: webURL = URL(string: "https://www.youtube.com")
+            }
+            
+            if let webURL = webURL {
+                self.lastRedirectError = "\(platform.name) app not found. Opening web version instead."
+                UIApplication.shared.open(webURL, options: [:], completionHandler: completion)
+            } else {
+                self.lastRedirectError = "Could not open \(platform.name). Please make sure the app is installed."
+                completion(false)
+            }
         }
     }
 } 

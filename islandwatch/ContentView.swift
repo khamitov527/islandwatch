@@ -9,6 +9,9 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var tracker: SocialMediaTracker
+    @State private var displayTime: String = "00:00"
+    @State private var displayTimer: Timer? = nil
+    @State private var showRedirectError = false
     
     var body: some View {
         VStack(spacing: 20) {
@@ -35,7 +38,46 @@ struct ContentView: View {
             if let appDelegate = UIApplication.shared.delegate as? AppDelegate {
                 appDelegate.tracker = tracker
             }
+            startDisplayTimer()
         }
+        .onDisappear {
+            stopDisplayTimer()
+        }
+        .onChange(of: tracker.isRunning) { isRunning in
+            if isRunning {
+                startDisplayTimer()
+            } else {
+                stopDisplayTimer()
+            }
+        }
+        .onChange(of: tracker.lastRedirectError) { error in
+            showRedirectError = error != nil
+        }
+        .alert("App Redirection Issue", isPresented: $showRedirectError) {
+            Button("OK") {
+                tracker.lastRedirectError = nil
+            }
+        } message: {
+            Text(tracker.lastRedirectError ?? "")
+        }
+    }
+    
+    private func startDisplayTimer() {
+        // Invalidate existing timer if any
+        displayTimer?.invalidate()
+        
+        // Start a new timer that fires every 0.1 seconds to update the display
+        displayTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if tracker.isRunning {
+                // Force UI update by updating displayTime
+                displayTime = tracker.formattedTime()
+            }
+        }
+    }
+    
+    private func stopDisplayTimer() {
+        displayTimer?.invalidate()
+        displayTimer = nil
     }
     
     private var headerView: some View {
@@ -64,9 +106,13 @@ struct ContentView: View {
                     Text("Current Platform: \(platform.name)")
                         .font(.headline)
                     
-                    Text(tracker.formattedTime())
+                    // Use displayTime when running, or direct tracker time when not
+                    Text(tracker.isRunning ? displayTime : tracker.formattedTime())
                         .font(.system(size: 54, weight: .bold, design: .monospaced))
                         .foregroundColor(platform.color)
+                        .id(displayTime) // Force view to refresh when displayTime changes
+                        .contentTransition(.numericText())
+                        .animation(.linear(duration: 0.15), value: displayTime)
                     
                     HStack(spacing: 20) {
                         Button(action: {

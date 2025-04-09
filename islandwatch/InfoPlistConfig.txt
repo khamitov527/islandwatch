@@ -7,8 +7,12 @@ NSUserActivityTypes (Array): Add item "SocialMediaTimerAttributes"
 
 LSApplicationQueriesSchemes (Array): Add items:
 - instagram
+- instagram-stories
 - twitter
+- twitterauth
 - youtube
+- youtube-app
+- vnd.youtube
 
 UIApplicationShortcutItems (Array): Add the following dictionaries:
 

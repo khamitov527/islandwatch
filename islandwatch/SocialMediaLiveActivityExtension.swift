@@ -24,6 +24,8 @@ struct SocialMediaLiveActivityWidget: Widget {
                     Text(formattedTime(timeInterval: context.state.elapsedTime))
                         .font(.headline)
                         .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .animation(.default, value: context.state.elapsedTime)
                 }
                 
                 DynamicIslandExpandedRegion(.center) {
@@ -46,6 +48,8 @@ struct SocialMediaLiveActivityWidget: Widget {
                 Text(formattedTime(timeInterval: context.state.elapsedTime))
                     .monospacedDigit()
                     .font(.caption2)
+                    .contentTransition(.numericText())
+                    .animation(.default, value: context.state.elapsedTime)
             } minimal: {
                 Image(systemName: "timer")
             }
@@ -78,6 +82,8 @@ struct SocialMediaLiveActivityView: View {
             Text(formattedTime(timeInterval: context.state.elapsedTime))
                 .monospacedDigit()
                 .fontWeight(.bold)
+                .contentTransition(.numericText())
+                .animation(.default, value: context.state.elapsedTime)
         }
         .padding(.horizontal)
     }
@@ -120,6 +126,8 @@ struct SocialMediaLiveActivityExpandedView: View {
                     
                     Text(formattedTime(timeInterval: context.state.elapsedTime))
                         .font(.system(size: 28, weight: .bold, design: .monospaced))
+                        .contentTransition(.numericText())
+                        .animation(.default, value: context.state.elapsedTime)
                 }
                 
                 Spacer()
