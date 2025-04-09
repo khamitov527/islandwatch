@@ -1,0 +1,34 @@
+Add the following entries to your project configuration:
+
+1. Go to your target's Info tab in Xcode
+2. Add the following keys to the "Custom iOS Target Properties" section:
+
+NSUserActivityTypes (Array): Add item "SocialMediaTimerAttributes"
+
+LSApplicationQueriesSchemes (Array): Add items:
+- instagram
+- twitter
+- youtube
+
+UIApplicationShortcutItems (Array): Add the following dictionaries:
+
+Dictionary 1:
+- UIApplicationShortcutItemIconType: UIApplicationShortcutIconTypePlay
+- UIApplicationShortcutItemTitle: Start Instagram Timer
+- UIApplicationShortcutItemType: com.islandwatch.startInstagram
+
+Dictionary 2:
+- UIApplicationShortcutItemIconType: UIApplicationShortcutIconTypePlay
+- UIApplicationShortcutItemTitle: Start X Timer
+- UIApplicationShortcutItemType: com.islandwatch.startTwitter
+
+Dictionary 3:
+- UIApplicationShortcutItemIconType: UIApplicationShortcutIconTypePlay
+- UIApplicationShortcutItemTitle: Start YouTube Timer
+- UIApplicationShortcutItemType: com.islandwatch.startYouTube
+
+UIBackgroundModes (Array): Add item "remote-notification"
+
+NSSupportsLiveActivities (Boolean): YES
+
+3. Also create a separate target for the widget extension to handle Live Activities
